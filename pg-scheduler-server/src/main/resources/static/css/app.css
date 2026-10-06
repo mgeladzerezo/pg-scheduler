@@ -174,3 +174,7 @@ dl.props dd { margin: 0; word-break: break-word; }
   dl.props { grid-template-columns: 1fr; gap: 0; }
   dl.props dt { margin-top: 8px; }
 }
+
+/* Cards inside a grid are spaced by the grid gap, not by the sibling margin. */
+.grid > .card { margin-top: 0; }
+main:focus-visible { outline: none; }

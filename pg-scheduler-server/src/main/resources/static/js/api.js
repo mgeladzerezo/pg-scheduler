@@ -1,7 +1,8 @@
 // JSON API client. Credentials are the browser's cached HTTP Basic login, so there is no token handling here.
 
 async function request(method, path, body) {
-  const response = await fetch(path, {
+  // Absolute URL without credentials: a page opened as http://user:pass@host/ would make fetch refuse a relative path.
+  const response = await fetch(location.origin + path, {
     method,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -34,7 +35,7 @@ export const live = (() => {
   function status(state) { statusListeners.forEach((fn) => fn(state)); }
 
   function open() {
-    source = new EventSource('/api/stream');
+    source = new EventSource(location.origin + '/api/stream');
     source.addEventListener('overview', (event) => {
       last = JSON.parse(event.data);
       status('live');

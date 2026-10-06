@@ -1,0 +1,86 @@
+# One dashboard/cron node and three workers on one PostgreSQL.
+#   docker compose up --build
+#   open http://localhost:8207   (admin / admin unless DASHBOARD_PASSWORD is set)
+#   docker kill pg-scheduler-worker-1   # its running jobs move to the other two once the 15 s lease expires
+x-app: &app
+  build: .
+  depends_on:
+    postgres:
+      condition: service_healthy
+  environment: &app-env
+    DB_URL: jdbc:postgresql://postgres:5432/pgscheduler
+    DB_USER: pgscheduler
+    DB_PASSWORD: pgscheduler
+    DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-admin}
+  stop_grace_period: 45s
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pg-scheduler-postgres
+    environment:
+      POSTGRES_DB: pgscheduler
+      POSTGRES_USER: pgscheduler
+      POSTGRES_PASSWORD: pgscheduler
+    ports:
+      - "5547:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgscheduler -d pgscheduler"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  server:
+    <<: *app
+    container_name: pg-scheduler-server
+    ports:
+      - "8207:8207"
+    environment:
+      <<: *app-env
+      WORKER_ENABLED: "false"
+      CRON_ENABLED: "true"
+      DEMO_SEED: "true"
+      DEMO_TRAFFIC_SECONDS: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8207/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  worker-1: &worker
+    <<: *app
+    container_name: pg-scheduler-worker-1
+    depends_on:
+      server:
+        condition: service_healthy
+    environment: &worker-env
+      <<: *app-env
+      WORKER_ID: worker-1
+      WORKER_ENABLED: "true"
+      CRON_ENABLED: "false"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8207/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  worker-2:
+    <<: *worker
+    container_name: pg-scheduler-worker-2
+    environment:
+      <<: *worker-env
+      WORKER_ID: worker-2
+
+  worker-3:
+    <<: *worker
+    container_name: pg-scheduler-worker-3
+    environment:
+      <<: *worker-env
+      WORKER_ID: worker-3
+
+volumes:
+  pgdata:

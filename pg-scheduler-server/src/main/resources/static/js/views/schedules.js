@@ -35,7 +35,7 @@ export function render(root) {
         h('td', { class: 'actions' },
           h('button', { class: 'small', onclick: () => act('Job enqueued', () => api.post(`/api/schedules/${s.id}/trigger`)) }, 'Trigger now'), ' ',
           h('button', { class: 'small', onclick: () => act(s.paused ? 'Resumed' : 'Paused', () => api.post(`/api/schedules/${s.id}/${s.paused ? 'resume' : 'pause'}`)) }, s.paused ? 'Resume' : 'Pause'), ' ',
-          h('button', { class: 'small danger', onclick: () => { if (confirm(`Delete schedule ${s.name}?`)) act('Deleted', () => api.del('/api/schedules/' + s.id)); } }, 'Delete')))))));
+          h('button', { class: 'small danger', onclick: () => { if (confirm(`Delete schedule ${s.name}?`)) act('Deleted', () => api.del('/api/schedules/' + s.id)); } }, 'Delete'))))))));
   }
 
   load();
