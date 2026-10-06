@@ -352,6 +352,7 @@ public final class Worker {
         }
         Duration timeout = Duration.ofMillis(run.job.timeoutMs());
         log.warn("Job {} ({}) exceeded its timeout of {}; interrupting the handler", run.job.id(), run.job.type(), timeout);
+        run.timedOut = true;
         Thread.startVirtualThread(() -> settle(run, new JobTimeoutException(run.job.id(), timeout), null));
         run.interrupt();
     }
@@ -363,6 +364,13 @@ public final class Worker {
         }
         ClaimedJob job = run.job;
         Duration duration = Duration.ofNanos(System.nanoTime() - run.startedNanos);
+        if (failure != null && run.timedOut && !(failure instanceof JobTimeoutException)) {
+            // The handler reacted to the timeout's interrupt before the watchdog got here. Whatever it
+            // threw on the way out (usually InterruptedException), the attempt failed because it timed out.
+            JobTimeoutException timeout = new JobTimeoutException(job.id(), Duration.ofMillis(job.timeoutMs()));
+            timeout.addSuppressed(failure);
+            failure = timeout;
+        }
 
         String resultJson = null;
         if (failure == null && result != null) {
@@ -572,6 +580,7 @@ public final class Worker {
         private final long startedNanos = System.nanoTime();
         private final AtomicBoolean settled = new AtomicBoolean();
         private final AtomicBoolean leaseLost = new AtomicBoolean();
+        private volatile boolean timedOut;
         private volatile Thread thread;
         private volatile ScheduledFuture<?> timeout;
         private volatile Object result;

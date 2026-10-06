@@ -14,8 +14,9 @@ public final class MaintenanceDao {
     /**
      * Moves due SCHEDULED and FAILED (retry-pending) jobs to READY, which puts them into the claim index.
      * Does not touch updated_at: the claim uses it to measure how long a job really waited.
+     * Parameter: limit. Public, like {@link WorkerDao#CLAIM}, so that its plan can be inspected.
      */
-    private static final String PROMOTE = """
+    public static final String PROMOTE = """
             WITH due AS (
                 SELECT id
                 FROM pgs_job
@@ -44,8 +45,9 @@ public final class MaintenanceDao {
      * the lease. The attempt was already counted when it was claimed, so a job on its last attempt goes to
      * DEAD and any other back to READY for the next worker. The old owner is not asked; if it is still
      * alive, the fence in its completion statement turns its late result into a no-op.
+     * Parameter: limit. Public so that its plan can be inspected.
      */
-    private static final String REAP = """
+    public static final String REAP = """
             WITH expired AS (
                 SELECT id, locked_by, started_at
                 FROM pgs_job

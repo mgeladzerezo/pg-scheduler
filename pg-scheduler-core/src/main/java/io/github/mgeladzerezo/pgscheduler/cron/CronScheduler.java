@@ -35,8 +35,8 @@ import tools.jackson.databind.ObjectMapper;
 public final class CronScheduler {
 
     /**
-     * @param misfireThreshold  how late a fire time may be noticed and still count as on time (relevant to
-     *                          {@link MisfirePolicy#SKIP})
+     * @param misfireThreshold  how late a fire time may be noticed and still count as on time; anything later
+     *                          is a misfire and handled by the schedule's {@link MisfirePolicy}
      * @param maxCatchUpPerTick upper bound of jobs one schedule may enqueue in one pass under
      *                          {@link MisfirePolicy#CATCH_UP}; the rest follows on the next pass
      * @param pollInterval      longest sleep of the background loop; it also wakes at every minute boundary
@@ -180,32 +180,28 @@ public final class CronScheduler {
         }
 
         // Walk the fire times from the first unprocessed one up to now and keep those the policy wants.
+        // A fire time is a misfire when it is noticed later than the misfire threshold.
         List<Instant> toFire = new ArrayList<>();
+        Instant latestMisfire = null;
         Instant cursor = schedule.nextFireTime();
         while (cursor != null && !cursor.isAfter(now)) {
-            boolean stop = false;
-            switch (schedule.misfirePolicy()) {
-                case CATCH_UP -> {
-                    if (toFire.size() == options.maxCatchUpPerTick()) {
-                        stop = true; // cursor stays on the first fire time not handled; the next pass continues
-                    } else {
-                        toFire.add(cursor);
-                    }
+            boolean misfire = Duration.between(cursor, now).compareTo(options.misfireThreshold()) > 0;
+            if (schedule.misfirePolicy() == MisfirePolicy.CATCH_UP) {
+                if (toFire.size() == options.maxCatchUpPerTick()) {
+                    break; // cursor stays on the first fire time not handled; the next pass continues there
                 }
-                case FIRE_ONCE -> {
-                    toFire.clear();
-                    toFire.add(cursor);
-                }
-                case SKIP -> {
-                    if (Duration.between(cursor, now).compareTo(options.misfireThreshold()) <= 0) {
-                        toFire.add(cursor);
-                    }
-                }
-            }
-            if (stop) {
-                break;
+                toFire.add(cursor);
+            } else if (!misfire) {
+                toFire.add(cursor);
+            } else {
+                latestMisfire = cursor;
             }
             cursor = cron.next(cursor, zone).orElse(null);
+        }
+        if (schedule.misfirePolicy() == MisfirePolicy.FIRE_ONCE && latestMisfire != null) {
+            // Something was missed: fire once, for the most recent fire time that is due.
+            Instant latest = toFire.isEmpty() ? latestMisfire : toFire.getLast();
+            toFire = List.of(latest);
         }
 
         JobPolicy policy = policies.forType(schedule.jobType());

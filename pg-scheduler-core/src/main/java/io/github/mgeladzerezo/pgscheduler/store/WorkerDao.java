@@ -63,7 +63,11 @@ public final class WorkerDao {
                       (extract(epoch FROM now() - picked.eligible_at) * 1000)::bigint AS wait_ms
             """;
 
-    static final String CLAIM = CLAIM_TEMPLATE.formatted("?");
+    /**
+     * The claim statement. Parameters: queue, job types (text[]), queue, limit, worker id, lease in ms.
+     * Public so that its plan can be inspected with EXPLAIN (see {@code ClaimPlanTest} and docs/claim-plan.md).
+     */
+    public static final String CLAIM = CLAIM_TEMPLATE.formatted("?");
 
     /**
      * Same claim for a queue with a cluster-wide limit: never take more than the limit minus what is
