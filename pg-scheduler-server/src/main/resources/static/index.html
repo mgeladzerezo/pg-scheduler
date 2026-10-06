@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pg-scheduler</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b6cb0'/%3E%3Cpath d='M8 17h5l3-8 4 14 3-6h3' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/app.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#/"><span class="brand-mark" aria-hidden="true"></span>pg-scheduler</a>
+      <nav id="nav" aria-label="Main">
+        <a href="#/" data-route="">Overview</a>
+        <a href="#/jobs" data-route="jobs">Jobs</a>
+        <a href="#/dead" data-route="dead">Dead letters</a>
+        <a href="#/workers" data-route="workers">Workers</a>
+        <a href="#/schedules" data-route="schedules">Schedules</a>
+      </nav>
+      <div class="topbar-end">
+        <span id="live" class="pill" title="Live updates over server-sent events">connecting</span>
+        <button id="theme" class="icon-btn" type="button" aria-label="Toggle theme">&#9680;</button>
+      </div>
+    </header>
+    <main id="view" tabindex="-1"></main>
+  </div>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

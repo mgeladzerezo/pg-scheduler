@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: pg-scheduler
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5547/pgscheduler}
+    username: ${DB_USER:pgscheduler}
+    password: ${DB_PASSWORD:pgscheduler}
+    hikari:
+      # A worker with 10 slots needs a few connections at any one time (claims, heartbeats, completions).
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+  lifecycle:
+    timeout-per-shutdown-phase: 40s
+
+server:
+  port: ${PORT:8207}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+dashboard:
+  auth:
+    username: ${DASHBOARD_USER:admin}
+    password: ${DASHBOARD_PASSWORD:admin}
+  demo:
+    seed: ${DEMO_SEED:false}
+    traffic: ${DEMO_TRAFFIC_SECONDS:0}
+
+pgscheduler:
+  worker-id: ${WORKER_ID:}
+  worker:
+    enabled: ${WORKER_ENABLED:true}
+    queues:
+      default: ${WORKER_CONCURRENCY:8}
+    lease: ${WORKER_LEASE:15s}
+  cron:
+    enabled: ${CRON_ENABLED:true}
+  job-types:
+    # Retry behaviour of the demo handlers, set here so that it shows in the dashboard within seconds.
+    "[flaky.job]":
+      max-attempts: 6
+      backoff-initial: 2s
+      backoff-max: 30s
+    "[always.fail]":
+      max-attempts: 3
+      backoff-initial: 1s
+      backoff-max: 5s
+    "[slow.job]":
+      timeout: 2m
