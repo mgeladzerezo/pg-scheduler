@@ -11,8 +11,7 @@ written from scratch.
 
 ## Status of verification (read this first)
 
-This repository was finished in a session where the tests could be run only until a rule change stopped all execution.
-The README says exactly what that covers.
+The tests were run on earlier revisions of this code, not on its final form. The table says exactly what that covers.
 
 | Item | State |
 | --- | --- |
@@ -21,7 +20,7 @@ The README says exactly what that covers.
 | Docker image, `docker compose up --build`, three workers, `docker kill` hand-over | Built and started once, and the hand-over was observed by hand (see "Demo script"). The final `Dockerfile` edit (curl line formatting), the CSS and `api.js` tweaks and everything after were **not** rebuilt or re-run. |
 | Dashboard UI | Overview page looked at once in a headless browser. The other pages (jobs, job detail, dead letters, workers, schedules) were never rendered. The last two UI edits were never run. |
 | Benchmarks, `EXPLAIN` output | **Not measured in the final state.** See "Performance" and `docs/claim-plan.md`. |
-| `./mvnw verify` from a clean checkout | Not run in this pass. |
+| `./mvnw verify` from a clean checkout | Not yet run on the final revision. |
 
 ## Architecture
 
